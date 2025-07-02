@@ -116,9 +116,10 @@ const itemsDiv = document.getElementById("items");
 const spinBtn = document.getElementById("spin");
 const claimBtn = document.getElementById("claim");
 const resultDiv = document.getElementById("result");
-const itemHeight = window.innerWidth < 500 ? 23 : 32;
-const ringSize = 7; // Меньше — компактней!
 const centerIdx = Math.floor(ringSize/2);
+const ringSize = 9;
+const centerIdx = Math.floor(visibleCount/2);
+const itemHeight = window.innerWidth < 500 ? 34 : 50;
 
 
     let ring = [];
@@ -153,63 +154,54 @@ const centerIdx = Math.floor(ringSize/2);
     let startTime = 0;
     let spun = false;
 
-    function animate() {
-      posY -= speed;
-      itemsDiv.style.transform = `translateY(${posY}px)`;
+function animate() {
+  posY -= speed;
+  itemsDiv.style.transform = `translateY(${posY}px)`;
 
-      if (posY <= -itemHeight) {
-        posY += itemHeight;
-        ring.push(ring.shift());
-        drawRing();
+  if (posY <= -itemHeight) {
+    posY += itemHeight;
+    ring.push(ring.shift());
+    drawRing();
 
-        // Вставляем 1 TRX с учётом поправки!
-        if (isFinalizing && !finalPrizeInserted) {
-          finalPrizeIdx = (centerIdx + stepsToFinal - 1 + ring.length) % ring.length;
-          ring[finalPrizeIdx] = winPrize;
-          finalPrizeInserted = true;
-        }
-
-        if (isFinalizing) {
-          stepsToFinal--;
-        }
-      }
-
-      // Запускаем финальный режим после 2.7 секунд
-      if (!isFinalizing && performance.now() - startTime > 2700) {
-        stepsToFinal = 6; // чуть меньше прокруток для компактности
-        isFinalizing = true;
-        finalPrizeInserted = false;
-      }
-
-      // Останавливаем анимацию, когда приз в центре
-if (isFinalizing && stepsToFinal <= 0 && Math.abs(posY) < 1) {
-  itemsDiv.style.transform = `translateY(0)`;
-  let view = [];
-  // Правильно определяем, какие 5 элементов показать
-  for (let i = 0; i < visibleCount; i++) {
-    let idx = (ring.length + centerIdx - Math.floor(visibleCount/2) + i) % ring.length;
-    view.push(ring[idx]);
-  }
-  itemsDiv.innerHTML = '';
-  view.forEach((prize, i) => {
-    let div = document.createElement('div');
-    div.className = 'item' + (i === centerIdx ? ' centered' : '');
-    div.textContent = prize;
-    itemsDiv.appendChild(div);
-  });
-  resultDiv.textContent = `🎉 Ваш выигрыш: ${winPrize}!`;
-  claimBtn.style.display = 'inline-block';
-  rolling = false;
-  cancelAnimationFrame(animFrame);
-  return;
-}
-
-      // Замедление
-      if (isFinalizing && speed > 1.1) {
-        speed -= 0.07;
-      }
-      animFrame = requestAnimationFrame(animate);
+    if (isFinalizing && !finalPrizeInserted) {
+      // Выигрыш в центр view
+      let insertPos = (ring.length + centerIdx - Math.floor(visibleCount/2)) % ring.length;
+      ring[insertPos] = winPrize;
+      finalPrizeInserted = true;
     }
+    if (isFinalizing) stepsToFinal--;
+  }
+
+  if (!isFinalizing && performance.now() - startTime > 2700) {
+    stepsToFinal = 6;
+    isFinalizing = true;
+    finalPrizeInserted = false;
+  }
+
+  if (isFinalizing && stepsToFinal <= 0 && Math.abs(posY) < 1) {
+    itemsDiv.style.transform = `translateY(0)`;
+    let view = [];
+    for (let i = 0; i < visibleCount; i++) {
+      let idx = (ring.length + centerIdx - Math.floor(visibleCount/2) + i) % ring.length;
+      view.push(ring[idx]);
+    }
+    itemsDiv.innerHTML = '';
+    view.forEach((prize, i) => {
+      let div = document.createElement('div');
+      div.className = 'item' + (i === centerIdx ? ' centered' : '');
+      div.textContent = prize;
+      itemsDiv.appendChild(div);
+    });
+    resultDiv.textContent = `🎉 Ваш выигрыш: ${winPrize}!`;
+    claimBtn.style.display = 'inline-block';
+    rolling = false;
+    cancelAnimationFrame(animFrame);
+    return;
+  }
+
+  if (isFinalizing && speed > 1.1) speed -= 0.07;
+  animFrame = requestAnimationFrame(animate);
+}
 
     spinBtn.addEventListener('click', () => {
       if (rolling || spun) return;
