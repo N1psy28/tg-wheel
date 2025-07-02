@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Крипто‑рулетка</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#111214">
   <style>
     html, body {
       margin: 0; padding: 0;
@@ -70,7 +71,6 @@
     #spin[disabled] {background: #23272f !important; color: #888 !important; cursor: default; opacity: 0.7;}
     #claim {background: #36c86d; color: #fff; display: none;}
     #result {margin: 14px 0 0; font-size: 1em; text-align: center; min-height: 24px; color: #fff;}
-
     @media (max-width: 500px) {
       h2 { font-size: 0.97em;}
       #mainbox {height: 88px; width: 99vw; max-width: 99vw;}
@@ -99,8 +99,8 @@
   <div id="result"></div>
   <script>
     // Автоматическое открытие webapp в полноэкранном режиме в Telegram:
-    if(window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.expand(); // Постарайся максимально открыть
+    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.expand) {
+      Telegram.WebApp.expand();
     }
 
     const prizes = [
@@ -111,23 +111,25 @@
       "250 USDT", "0.1 XMR", "0.02 BTC", "20 TON", "0.3 ETH"
     ];
     const winPrize = "1 TRX";
-const visibleCount = 5;
-const itemsDiv = document.getElementById("items");
-const spinBtn = document.getElementById("spin");
-const claimBtn = document.getElementById("claim");
-const resultDiv = document.getElementById("result");
-const centerIdx = Math.floor(ringSize/2);
-const ringSize = 9;
-const centerIdx = Math.floor(visibleCount/2);
-const itemHeight = window.innerWidth < 500 ? 34 : 50;
 
+    const ringSize = 9;
+    const visibleCount = 5;
+    const centerIdx = Math.floor(visibleCount / 2);
+    const itemHeight = window.innerWidth < 500 ? 23 : 32; // совпадает с .item в CSS
+
+    const itemsDiv = document.getElementById("items");
+    const spinBtn = document.getElementById("spin");
+    const claimBtn = document.getElementById("claim");
+    const resultDiv = document.getElementById("result");
 
     let ring = [];
+
     function fillRing() {
       ring = [];
       while (ring.length < ringSize) ring = ring.concat(prizes);
       ring = ring.slice(0, ringSize);
     }
+
     function drawRing() {
       itemsDiv.innerHTML = "";
       for (let i = 0; i < ringSize; i++) {
@@ -138,6 +140,7 @@ const itemHeight = window.innerWidth < 500 ? 34 : 50;
       }
       itemsDiv.style.transform = 'translateY(0)';
     }
+
     fillRing();
     drawRing();
 
@@ -145,63 +148,60 @@ const itemHeight = window.innerWidth < 500 ? 34 : 50;
     let animFrame;
     let posY = 0;
     let speed = 2.6;
-    let slowDownStart = false;
-    let needFinal = false;
     let isFinalizing = false;
     let stepsToFinal = 0;
     let finalPrizeInserted = false;
-    let finalPrizeIdx = -1;
     let startTime = 0;
     let spun = false;
 
-function animate() {
-  posY -= speed;
-  itemsDiv.style.transform = `translateY(${posY}px)`;
+    function animate() {
+      posY -= speed;
+      itemsDiv.style.transform = `translateY(${posY}px)`;
 
-  if (posY <= -itemHeight) {
-    posY += itemHeight;
-    ring.push(ring.shift());
-    drawRing();
+      if (posY <= -itemHeight) {
+        posY += itemHeight;
+        ring.push(ring.shift());
+        drawRing();
 
-    if (isFinalizing && !finalPrizeInserted) {
-      // Выигрыш в центр view
-      let insertPos = (ring.length + centerIdx - Math.floor(visibleCount/2)) % ring.length;
-      ring[insertPos] = winPrize;
-      finalPrizeInserted = true;
+        if (isFinalizing && !finalPrizeInserted) {
+          // Вставляем выигрыш в центр view
+          let insertPos = (centerIdx) % ring.length;
+          ring[insertPos] = winPrize;
+          finalPrizeInserted = true;
+        }
+        if (isFinalizing) stepsToFinal--;
+      }
+
+      if (!isFinalizing && performance.now() - startTime > 2700) {
+        stepsToFinal = 6;
+        isFinalizing = true;
+        finalPrizeInserted = false;
+      }
+
+      if (isFinalizing && stepsToFinal <= 0 && Math.abs(posY) < 1) {
+        itemsDiv.style.transform = `translateY(0)`;
+        let view = [];
+        for (let i = 0; i < visibleCount; i++) {
+          let idx = (ring.length + centerIdx - Math.floor(visibleCount/2) + i) % ring.length;
+          view.push(ring[idx]);
+        }
+        itemsDiv.innerHTML = '';
+        view.forEach((prize, i) => {
+          let div = document.createElement('div');
+          div.className = 'item' + (i === centerIdx ? ' centered' : '');
+          div.textContent = prize;
+          itemsDiv.appendChild(div);
+        });
+        resultDiv.textContent = `🎉 Ваш выигрыш: ${winPrize}!`;
+        claimBtn.style.display = 'inline-block';
+        rolling = false;
+        cancelAnimationFrame(animFrame);
+        return;
+      }
+
+      if (isFinalizing && speed > 1.1) speed -= 0.07;
+      animFrame = requestAnimationFrame(animate);
     }
-    if (isFinalizing) stepsToFinal--;
-  }
-
-  if (!isFinalizing && performance.now() - startTime > 2700) {
-    stepsToFinal = 6;
-    isFinalizing = true;
-    finalPrizeInserted = false;
-  }
-
-  if (isFinalizing && stepsToFinal <= 0 && Math.abs(posY) < 1) {
-    itemsDiv.style.transform = `translateY(0)`;
-    let view = [];
-    for (let i = 0; i < visibleCount; i++) {
-      let idx = (ring.length + centerIdx - Math.floor(visibleCount/2) + i) % ring.length;
-      view.push(ring[idx]);
-    }
-    itemsDiv.innerHTML = '';
-    view.forEach((prize, i) => {
-      let div = document.createElement('div');
-      div.className = 'item' + (i === centerIdx ? ' centered' : '');
-      div.textContent = prize;
-      itemsDiv.appendChild(div);
-    });
-    resultDiv.textContent = `🎉 Ваш выигрыш: ${winPrize}!`;
-    claimBtn.style.display = 'inline-block';
-    rolling = false;
-    cancelAnimationFrame(animFrame);
-    return;
-  }
-
-  if (isFinalizing && speed > 1.1) speed -= 0.07;
-  animFrame = requestAnimationFrame(animate);
-}
 
     spinBtn.addEventListener('click', () => {
       if (rolling || spun) return;
@@ -214,12 +214,9 @@ function animate() {
       drawRing();
       posY = 0;
       speed = 2.6;
-      slowDownStart = false;
-      needFinal = false;
       isFinalizing = false;
       stepsToFinal = 0;
       finalPrizeInserted = false;
-      finalPrizeIdx = -1;
       startTime = performance.now();
       animFrame = requestAnimationFrame(animate);
     });
