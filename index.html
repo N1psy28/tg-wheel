@@ -111,13 +111,15 @@
       "250 USDT", "0.1 XMR", "0.02 BTC", "20 TON", "0.3 ETH"
     ];
     const winPrize = "1 TRX";
-    const itemsDiv = document.getElementById("items");
-    const spinBtn = document.getElementById("spin");
-    const claimBtn = document.getElementById("claim");
-    const resultDiv = document.getElementById("result");
-    const itemHeight = window.innerWidth < 500 ? 23 : 32;
-    const ringSize = 7; // Меньше — компактней!
-    const centerIdx = Math.floor(ringSize/2);
+const visibleCount = 5;
+const itemsDiv = document.getElementById("items");
+const spinBtn = document.getElementById("spin");
+const claimBtn = document.getElementById("claim");
+const resultDiv = document.getElementById("result");
+const itemHeight = window.innerWidth < 500 ? 23 : 32;
+const ringSize = 7; // Меньше — компактней!
+const centerIdx = Math.floor(ringSize/2);
+
 
     let ring = [];
     function fillRing() {
