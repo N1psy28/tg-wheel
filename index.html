@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Крипто‑рулетка</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#111214">
   <style>
     html, body {
       margin: 0; padding: 0;
@@ -29,7 +28,7 @@
       position: relative;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 18px;
-      height: 222px; width: 20vw; max-width: 320px;
+      height: 230px; width: 92vw; max-width: 200px;
     }
     #wheel {
       width: 100%; height: 200px; overflow: hidden;
@@ -41,7 +40,7 @@
     }
     #items {position:relative; width:100%;}
     .item {
-      height: 32px; width: 100%;
+      height: 40px; width: 100%;
       display: flex; align-items: center; justify-content: center;
       font-size: 1em; font-weight: 600;
       letter-spacing: 0.5px; background: #15161a;
@@ -71,6 +70,7 @@
     #spin[disabled] {background: #23272f !important; color: #888 !important; cursor: default; opacity: 0.7;}
     #claim {background: #36c86d; color: #fff; display: none;}
     #result {margin: 14px 0 0; font-size: 1em; text-align: center; min-height: 24px; color: #fff;}
+
     @media (max-width: 500px) {
       h2 { font-size: 0.97em;}
       #mainbox {height: 88px; width: 99vw; max-width: 99vw;}
@@ -89,7 +89,7 @@
   </style>
 </head>
 <body>
-  <h2>🎲 Крипто‑рулетка!</h2>
+  <h2>🎲 Крипто‑Бонуска</h2>
   <div id="mainbox">
     <div id="wheel"><div id="items"></div></div>
     <div id="pointer"></div>
@@ -99,8 +99,8 @@
   <div id="result"></div>
   <script>
     // Автоматическое открытие webapp в полноэкранном режиме в Telegram:
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.expand) {
-      Telegram.WebApp.expand();
+    if(window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.expand(); // Постарайся максимально открыть
     }
 
     const prizes = [
@@ -111,25 +111,20 @@
       "250 USDT", "0.1 XMR", "0.02 BTC", "20 TON", "0.3 ETH"
     ];
     const winPrize = "1 TRX";
-
-    const ringSize = 9;
-    const visibleCount = 5;
-    const centerIdx = Math.floor(visibleCount / 2);
-    const itemHeight = window.innerWidth < 500 ? 23 : 32; // совпадает с .item в CSS
-
     const itemsDiv = document.getElementById("items");
     const spinBtn = document.getElementById("spin");
     const claimBtn = document.getElementById("claim");
     const resultDiv = document.getElementById("result");
+    const itemHeight = window.innerWidth < 500 ? 23 : 32;
+    const ringSize = 9; // Меньше — компактней!
+    const centerIdx = Math.floor(ringSize/2);
 
     let ring = [];
-
     function fillRing() {
       ring = [];
       while (ring.length < ringSize) ring = ring.concat(prizes);
       ring = ring.slice(0, ringSize);
     }
-
     function drawRing() {
       itemsDiv.innerHTML = "";
       for (let i = 0; i < ringSize; i++) {
@@ -140,7 +135,6 @@
       }
       itemsDiv.style.transform = 'translateY(0)';
     }
-
     fillRing();
     drawRing();
 
@@ -148,9 +142,12 @@
     let animFrame;
     let posY = 0;
     let speed = 2.6;
+    let slowDownStart = false;
+    let needFinal = false;
     let isFinalizing = false;
     let stepsToFinal = 0;
     let finalPrizeInserted = false;
+    let finalPrizeIdx = -1;
     let startTime = 0;
     let spun = false;
 
@@ -163,45 +160,43 @@
         ring.push(ring.shift());
         drawRing();
 
+        // Вставляем 1 TRX с учётом поправки!
         if (isFinalizing && !finalPrizeInserted) {
-          // Вставляем выигрыш в центр view
-          let insertPos = (centerIdx) % ring.length;
-          ring[insertPos] = winPrize;
+          finalPrizeIdx = (centerIdx + stepsToFinal - 1 + ring.length) % ring.length;
+          ring[finalPrizeIdx] = winPrize;
           finalPrizeInserted = true;
         }
-        if (isFinalizing) stepsToFinal--;
+
+        if (isFinalizing) {
+          stepsToFinal--;
+        }
       }
 
+      // Запускаем финальный режим после 2.7 секунд
       if (!isFinalizing && performance.now() - startTime > 2700) {
-        stepsToFinal = 6;
+        stepsToFinal = 6; // чуть меньше прокруток для компактности
         isFinalizing = true;
         finalPrizeInserted = false;
       }
 
+      // Останавливаем анимацию, когда приз в центре
       if (isFinalizing && stepsToFinal <= 0 && Math.abs(posY) < 1) {
         itemsDiv.style.transform = `translateY(0)`;
-        let view = [];
-        for (let i = 0; i < visibleCount; i++) {
-          let idx = (ring.length + centerIdx - Math.floor(visibleCount/2) + i) % ring.length;
-          view.push(ring[idx]);
-        }
-        itemsDiv.innerHTML = '';
-        view.forEach((prize, i) => {
-          let div = document.createElement('div');
-          div.className = 'item' + (i === centerIdx ? ' centered' : '');
-          div.textContent = prize;
-          itemsDiv.appendChild(div);
-        });
+    drawRing();
+
         resultDiv.textContent = `🎉 Ваш выигрыш: ${winPrize}!`;
         claimBtn.style.display = 'inline-block';
         rolling = false;
-        cancelAnimationFrame(animFrame);
+        cancelAnimationFrame(animFrame); 
         return;
       }
 
-      if (isFinalizing && speed > 1.1) speed -= 0.07;
+      // Замедление
+      if (isFinalizing && speed > 1.1) { 
+        speed -= 0.1;
+      }
       animFrame = requestAnimationFrame(animate);
-    }
+    } 
 
     spinBtn.addEventListener('click', () => {
       if (rolling || spun) return;
@@ -213,10 +208,13 @@
       fillRing();
       drawRing();
       posY = 0;
-      speed = 2.6;
+      speed = 2.5;
+      slowDownStart = false;
+      needFinal = false;
       isFinalizing = false;
       stepsToFinal = 0;
       finalPrizeInserted = false;
+      finalPrizeIdx = -1;
       startTime = performance.now();
       animFrame = requestAnimationFrame(animate);
     });
@@ -226,7 +224,6 @@
         window.Telegram.WebApp.close();
         setTimeout(() => {
           window.open("https://t.me/Test_main2424bot?start=crypto_bonus", "_blank");
-          Telegram.WebApp.close();
         }, 350);
       } else {
         window.location.href = "https://t.me/Test_main2424bot?start=crypto_bonus";
