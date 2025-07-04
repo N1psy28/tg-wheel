@@ -22,13 +22,15 @@
     h2 {
       margin: 0 0 12px 0; font-size: 1.1em; font-weight: 700; letter-spacing: 1px;
       color: #eee; text-shadow: 0 2px 10px #000b;
-      text-align: center;
+      text-align: center; 
     }
     #mainbox {
       position: relative;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 18px;
-      height: 230px; width: 92vw; max-width: 200px;
+        width: 92vw;
+      max-width: 300px;
+      margin: 0 auto;
     }
     #wheel {
       width: 100%; height: 200px; overflow: hidden;
@@ -71,12 +73,31 @@
     #claim {background: #36c86d; color: #fff; display: none;}
     #result {margin: 14px 0 0; font-size: 1em; text-align: center; min-height: 24px; color: #fff;}
 
-    @media (max-width: 500px) {
-      h2 { font-size: 0.97em;}
-      #mainbox {height: 88px; width: 99vw; max-width: 99vw;}
-      #wheel {height: 70px; min-width: 170px;}
-      .item {min-width: 110px; font-size: 0.95em; height: 23px;}
-      .item.centered {font-size: 1em;}
+ @media (max-width: 500px) {
+      /* контейнер вокруг барабана */
+      #mainbox {
+        height: 200px;       /* например, 200px вместо старых 88px */
+        width: 170px;        /* оставляем ваше фиксированное значение */
+        max-width: 170px;
+      }
+    
+      /* сам барабан */  
+      #wheel {
+        height: 180px;       /* чуть меньше, чтобы было пространство сверху/снизу */ 
+        min-width: 170px;  
+      }
+    
+      /* элементы внутри */
+      .item {
+        height: 44px;        /* увеличиваем строку до 44px */ 
+        line-height: 44px;   /* чтобы текст по‑центру */
+      }
+    
+      .item.centered {
+        /* можно чуть увеличить выделенный центр */
+        font-size: 1.1em;
+      }
+    }
       #pointer {
         border-top: 10px solid transparent; border-bottom: 10px solid transparent;
         border-right: 16px solid #ffe05b;
@@ -105,7 +126,7 @@
 
     const prizes = [
       "0.1 BTC", "100 TON", "3000 DOGE", "0.5 ETH", "50 USDT", "1 LTC",
-      "3 XRP", "0.1 SOL", "1 AVAX", "7 ADA", "0.5 BNB", "1 LINK", "15 USDT",
+      "3 XRP", "0.1 SOL", "1 TRX", "7 ADA", "0.5 BNB", "1 LINK", "15 USDT",
       "0.3 BTC", "0.01 BTC", "3 DOGE", "8 USDT", "0.3 TON", "1 ETH",
       "0.15 BTC", "2 DOT", "4 ADA", "0.2 LTC", "0.005 BTC", "10 MATIC",
       "250 USDT", "0.1 XMR", "0.02 BTC", "20 TON", "0.3 ETH"
@@ -199,7 +220,7 @@
     } 
 
     spinBtn.addEventListener('click', () => {
-      if (rolling || spun) return;
+      if (rolling || spun) return; 
       spun = true;
       rolling = true;
       spinBtn.disabled = true;
@@ -208,16 +229,16 @@
       fillRing();
       drawRing();
       posY = 0;
-      speed = 2.5;
+      speed = 1;
       slowDownStart = false;
       needFinal = false;
       isFinalizing = false;
       stepsToFinal = 0;
       finalPrizeInserted = false;
       finalPrizeIdx = -1;
-      startTime = performance.now();
+      startTime = performance.now(); 
       animFrame = requestAnimationFrame(animate);
-    });
+    }); 
 
     claimBtn.addEventListener('click', () => {
       if (window.Telegram && window.Telegram.WebApp) {
